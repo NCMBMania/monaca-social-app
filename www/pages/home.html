@@ -1,0 +1,28 @@
+<template>
+  <div class="page">
+    <div class="navbar">
+      <div class="navbar-bg"></div>
+      <div class="navbar-inner sliding">
+        <div class="left">
+          <a href="#" class="link" @click=${openMenu}>
+            <i class="icon f7-icons">line_horizontal_3</i>
+          </a>
+        </div>
+        <div class="title">ホーム</div>
+      </div>
+    </div>
+    <div class="page-content">
+      <a href="/users/moongift/">MOONGIFTさんのプロフィール</a>
+    </div>
+  </div>
+</template>
+<script>
+  export default function (props, {$f7, $on, $onBeforeMount, $onMounted, $onBeforeUnmount, $onUnmounted }) {
+    const openMenu = () => {
+      $f7.panel.open('left');
+    };
+    const user = ncmb.User.getCurrentUser();
+    $('.profile').attr('href', `/users/${user.userName}/`);
+    return $render;
+  }
+</script>

@@ -1,17 +1,5 @@
 const $ = Dom7;
 
-// Login Screen Demo
-$('#my-login-screen .login-button').on('click', function () {
-  var username = $('#my-login-screen [name="username"]').val();
-  var password = $('#my-login-screen [name="password"]').val();
-
-  // Close login screen
-  app.loginScreen.close('#my-login-screen');
-
-  // Alert username and password
-  app.dialog.alert('Username: ' + username + '<br/>Password: ' + password);
-});
-
 // NCMBの初期化用
 const event = window.cordova ? 'deviceready' : 'DOMContentLoaded';
 document.addEventListener(event, async (e) => {
@@ -26,4 +14,24 @@ document.addEventListener(event, async (e) => {
     // App routes
     routes: routes,
   });
+
+  $('.logout').on('click', async (e) => {
+    e.preventDefault();
+    try {
+      await ncmb.User.logout();
+    } catch (e) {
+      // 駄目だった場合は認証情報を削除
+      localStorage.removeItem("NCMB/"+ncmb.apikey+"/currentUser");
+    }
+    location.reload();
+  });
 });
+
+// プロフィールオブジェクトをポインターの形式に変換する
+const profileToPointer = (profile) => {
+  return {
+    __type: "Pointer",
+    className: "UserProfile",
+    objectId: profile.objectId
+  };
+};

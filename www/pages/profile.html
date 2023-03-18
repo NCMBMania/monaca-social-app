@@ -1,0 +1,101 @@
+<template>
+  <div class="page">
+    <div class="navbar">
+      <div class="navbar-bg"></div>
+      <div class="navbar-inner sliding">
+				<div class="left">
+					<a href="#" class="link back">
+						<i class="icon icon-back"></i>
+						<span class="if-not-md">戻る</span>
+					</a>
+				</div>
+				<div class="title">${userProfile.userName}さんのプロフィール</div>
+      </div>
+    </div>
+    <div class="page-content">
+			<div class="block" style="text-align: center;">
+				<img class="profileImage" src="${userProfile.image}" />
+			</div>
+			<div class="block block-strong no-hairlines text-center">
+				${userProfile.userName}
+			</div>
+			<div class="block block-strong">
+        <p class="row">
+					${ mine ?
+						$h`<button class="col button button-small disabled button-fill">フォローする</button>` :
+						followed ? 
+						$h`<button class="col button button-small button-fill" @click=${unfollowUser}>フォロー中</button>` :
+						$h`<button class="col button button-small button-fill" @click=${followUser}>フォローする</button>`
+					}
+				</p>
+			</div>
+			<div class="block no-hairlines">
+				<p innerHTML="${marked.parse(userProfile.profile || '')}"></p>
+			</div>
+    </div>
+  </div>
+</template>
+<style>
+.profileImage {
+	width: 100px;
+	height: 100px;
+	border-radius: 50%;
+}
+</style>
+<script>
+	const profileToPointer = (profile) => {
+		return {
+			__type: "Pointer",
+			className: "UserProfile",
+			objectId: profile.objectId
+		};
+	};
+
+  export default async function (props, { $store, $f7, $on, $update }) {
+		const { userName } = props;
+		const UserProfile = ncmb.DataStore("UserProfile");
+		const { profile } = store.getters;
+		const userProfile = await UserProfile
+			.equalTo("userName", userName)
+			.fetch();
+		const mine = ncmb.User.getCurrentUser().userName === userName;
+		const Follow = ncmb.DataStore("Follow");
+		let follow = mine ? {} : (await Follow
+			.equalTo("profile", profileToPointer(profile.value))
+			.fetch());
+		let followed = (follow.follows || []).indexOf(userProfile.objectId) >= 0;
+
+		const followUser = async () => {
+			if (!follow.objectId) {
+				follow = new Follow();
+				const acl = new ncmb.Acl();
+				acl
+					.setPublicReadAccess(true)
+					.setUserWriteAccess(ncmb.User.getCurrentUser(), true)
+					.setRoleWriteAccess("admin", true);
+				await follow
+					.set('profile', profile.value)
+					.set("acl", acl)
+					.set('follows', [userProfile.objectId])
+					.save();
+			} else {
+				await follow
+					.addUnique("follows", userProfile.objectId)
+					.update();
+			}
+			followed = true;
+			$update();
+		};
+
+		const unfollowUser = async () => {
+			if (!follow.objectId) return;
+			await follow
+					.remove("follows", userProfile.objectId)
+					.update();
+			followed = false;
+			$update();
+		};
+    return $render;
+  }
+
+</script>
